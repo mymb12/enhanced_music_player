@@ -1,0 +1,9 @@
+[package]
+name = "enhansed_music_player"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rodio = "0.21.1"
+clap = { version = "4.0", features = ["derive"] }
+mp3-duration = "0.1.10"
