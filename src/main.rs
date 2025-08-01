@@ -1,6 +1,5 @@
 use clap::Parser;
-use mp3_duration;
-use std::{io, path::Path, sync::mpsc, thread};
+use std::{io, sync::mpsc, thread};
 
 mod cli;
 mod player;
@@ -30,16 +29,12 @@ fn handle_keyboard_input(player: &mut player::AudioPlayer) {
 
     println!("Exiting main thread");
 }
+
 fn main() {
     let args = cli::Cli::parse();
     let mut audio_player = player::AudioPlayer::new();
     // handle_keyboard_input(&mut audio_player);
     // ERROR: add an external thread for input procession
 
-    let mut str_path = String::from("songs/");
-    str_path += &args.path;
-    let path = Path::new(&str_path);
-    let duration = mp3_duration::from_path(&path).unwrap();
-
-    audio_player.play_audio(duration, &args.path);
+    audio_player.play_audio(&args.path);
 }
