@@ -1,7 +1,9 @@
 use rodio;
 use rodio::Decoder;
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{self, BufReader};
+use std::sync::mpsc;
+use std::thread;
 
 enum PlaybackState {
     Playing,
@@ -85,5 +87,54 @@ impl AudioPlayer {
 
     pub fn get_state(&self) -> &PlaybackState {
         &self.playback_state
+    }
+
+    pub fn handle_keyboard_input(&mut self) {
+        println!("Starting receiving user input:");
+        println!("Commands: 'resume', 'pause', 'new <filename>', 'quit'");
+
+        let (tx, rx) = mpsc::channel();
+
+        thread::spawn(move || loop {
+            let mut input = String::new();
+
+            io::stdin()
+                .read_line(&mut input)
+                .expect("Failed to read input");
+
+            let input = input.trim().to_string();
+            if let Err(_) = tx.send(input) {
+                println!("Receiver dropped, exiting input thread.");
+                break;
+            }
+        });
+
+        loop {
+            if let Ok(received) = rx.try_recv() {
+                match received.as_str() {
+                    "resume" => self.resume_audio(),
+                    "pause" => self.pause_audio(),
+                    "quit" => {
+                        println!("Exiting...");
+                        break;
+                    }
+                    input if input.starts_with("new ") => {
+                        let file_name = input.strip_prefix("new ").unwrap_or("");
+                        if !file_name.is_empty() {
+                            self.play_audio(&file_name.to_string());
+                        } else {
+                            println!("Please provide a filename: new <filename>");
+                        }
+                    }
+
+                    _ => println!(
+                        "Unknown command: '{}'. Available: resume, pause, new <filename>, quit",
+                        received
+                    ),
+                }
+            }
+        }
+
+        println!("Exiting main thread");
     }
 }
